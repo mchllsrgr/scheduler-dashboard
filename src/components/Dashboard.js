@@ -9,6 +9,7 @@ import {
   getMostPopularDay,
   getInterviewsPerDay
 } from "helpers/selectors";
+import { setInterview } from "helpers/reducers";
 
 const data = [
   {
@@ -61,12 +62,27 @@ class Dashboard extends Component {
         interviewers: interviewers.data
       });
     });
+
+    this.socket = new WebSocket(process.env.REACT_APP_WEBSOCKET_URL);
+    this.socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (typeof data === "object" && data.type === "SET_INTERVIEW") {
+        this.setState(prevState => 
+          setInterview(prevState, data.id, data.interview)
+        );
+      }
+    };
+
   }
 
   componentDidUpdate(prevProps, prevState) {
     if (prevState.focused !== this.state.focused) {
       localStorage.setItem("focused", JSON.stringify(this.state.focused));
     }
+  }
+
+  componentWillUnmount() {
+    this.socket.close();
   }
 
   selectPanel(id) {
